@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	"QUIC-VPN/utils"
 
@@ -12,56 +13,33 @@ import (
 
 func Server() {
 	// server address
-	addr := ":4242"
+	addr := "127.0.0.1:4242"
 
 	// Create a QUIC listener
 	listener, err := quic.ListenAddr(addr, utils.GenerateTLSConfigServer(), nil)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer listener.Close()
 
-	// Accept QUIC connections
-	for {
-		con, err := listener.Accept(context.Background())
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("Connection accepted")
-		// Handle the session
-		go handleSession(con)
-	}
-}
-
-func handleSession(con quic.Connection) {
-	// Accept streams
-	for {
-		stream, err := con.AcceptStream(context.Background())
-		if err != nil {
-			log.Println(err)
-			return
-		}
-
-		// Handle the stream
-		go handleStream(stream)
-	}
-}
-
-func handleStream(stream quic.Stream) {
-	// Read from the stream
-	buf := make([]byte, 1024)
-	n, err := stream.Read(buf)
+	// Accept a QUIC session
+	conn, err := listener.Accept(context.Background())
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal(err)
 	}
 
-	// Print the message
-	log.Printf("Received: %s", buf[:n])
-
-	// Write to the stream
-	_, err = stream.Write([]byte("Hello, World!"))
+	stream, err := conn.AcceptStream(context.Background())
 	if err != nil {
-		log.Println(err)
-		return
+		log.Fatal(err)
 	}
+
+	defer stream.Close()
+
+	data := make([]byte, 1500)
+	for n, _ := stream.Read(data); n > 0; n, _ = stream.Read(data) {
+
+		fmt.Printf("\033[32mServer: Received '%s'\033[0m\n", data)
+		time.Sleep(1 * time.Second)
+	}
+
 }

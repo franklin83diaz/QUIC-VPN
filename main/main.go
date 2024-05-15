@@ -6,7 +6,11 @@ import (
 )
 
 func main() {
+
 	go pkg.Server()
 	time.Sleep(1 * time.Second)
 	pkg.Client()
+
+	time.Sleep(10 * time.Second)
+
 }
