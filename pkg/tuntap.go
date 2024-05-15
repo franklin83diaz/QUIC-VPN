@@ -33,14 +33,7 @@ func CreateVNet() {
 	}
 
 	// Set the IP address and netmask for the TUN device
-	addr, err := netlink.ParseAddr("192.168.45.1/24")
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err := netlink.AddrAdd(tun, addr); err != nil {
-		log.Fatal(err)
-	}
+	SetIp("192.168.45.1/24", ifce.Name())
 
 	packet := make([]byte, 9000)
 	for {
@@ -49,10 +42,27 @@ func CreateVNet() {
 			log.Fatal(err)
 		}
 		log.Printf("Packet Received: % x\n", packet[:n])
-		log.Printf(string(packet[:n]))
+		log.Printf("%s", string(packet[:n]))
 
 	}
 
+}
+
+func SetIp(ip string, ifceName string) {
+	// Set the IP address and netmask for the TUN device
+	addr, err := netlink.ParseAddr(ip)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	link, err := netlink.LinkByName(ifceName)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := netlink.AddrAdd(link, addr); err != nil {
+		log.Fatal(err)
+	}
 }
 
 // Delete the TUN device
