@@ -7,6 +7,10 @@ import (
 
 func main() {
 
+	pkg.CreateVNet()
+	time.Sleep(5 * time.Second)
+	//pkg.DeleteVNet()
+
 	go pkg.Server()
 	time.Sleep(1 * time.Second)
 	pkg.Client()
