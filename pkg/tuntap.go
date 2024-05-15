@@ -49,6 +49,8 @@ func CreateVNet() {
 			log.Fatal(err)
 		}
 		log.Printf("Packet Received: % x\n", packet[:n])
+		log.Printf(string(packet[:n]))
+
 	}
 
 }
