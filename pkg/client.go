@@ -21,13 +21,18 @@ func Client() {
 		log.Fatal(err)
 	}
 
+	con2, err := quic.DialAddr(context.Background(), addr, utils.GenerateTLSConfigClient(), nil)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	// Create a QUIC stream
 	stream, err := con.OpenStreamSync(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
 	time.Sleep(1 * time.Second)
-	stream2, err := con.OpenStreamSync(context.Background())
+	stream2, err := con2.OpenStreamSync(context.Background())
 	if err != nil {
 		log.Fatal(err)
 	}
