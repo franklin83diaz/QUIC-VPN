@@ -29,7 +29,7 @@ func main() {
 		fmt.Println(err)
 	}
 
-	ipServer = ipServer + strings.Split(network.CIDR, "/")[1]
+	ipServer = ipServer + "/" + strings.Split(network.CIDR, "/")[1]
 
 	fmt.Println("Network CIDR: ", network.CIDR)
 

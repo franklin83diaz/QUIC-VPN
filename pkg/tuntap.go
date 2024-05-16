@@ -1,7 +1,6 @@
 package pkg
 
 import (
-	"fmt"
 	"log"
 
 	"github.com/songgao/water"
@@ -63,20 +62,4 @@ func SetIp(ip string, ifceName string) {
 	if err := netlink.AddrAdd(link, addr); err != nil {
 		log.Fatal(err)
 	}
-}
-
-// Delete the TUN device
-func DeleteVNet() error {
-	link, err := netlink.LinkByName("quic-tun0")
-	if err != nil {
-		fmt.Printf("Error to delete interface: %v\n", err)
-		return err
-	}
-
-	// Delete the TUN device
-	if err := netlink.LinkDel(link); err != nil {
-		fmt.Printf("Error to delete interface: %v\n", err)
-		return err
-	}
-	return nil
 }
