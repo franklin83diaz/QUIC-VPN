@@ -8,14 +8,14 @@ import (
 )
 
 // Create a new TUN device
-func CreateTun(ipServer string) {
+func CreateTun(ipServer string) *water.Interface {
 
 	ifce, err := water.New(water.Config{
 		DeviceType: water.TUN,
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	log.Printf("Interface Name: %s\n", ifce.Name())
@@ -28,22 +28,13 @@ func CreateTun(ipServer string) {
 
 	// Set the IP address and netmask for the TUN device
 	if err := netlink.LinkSetUp(tun); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	// Set the IP address and netmask for the TUN device
 	SetIp(ipServer, ifce.Name())
 
-	packet := make([]byte, 9000)
-	for {
-		n, err := ifce.Read(packet)
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("Packet Received: % x\n", packet[:n])
-		log.Printf("%s", string(packet[:n]))
-
-	}
+	return ifce
 
 }
 

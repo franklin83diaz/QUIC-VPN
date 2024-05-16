@@ -34,6 +34,9 @@ func main() {
 	fmt.Println("Network CIDR: ", network.CIDR)
 
 	// Create Virtual Network Interface
-	pkg.CreateTun(ipServer)
+	ifce := pkg.CreateTun(ipServer)
+
+	// Connection QUIC listener
+	pkg.Server(ifce)
 
 }

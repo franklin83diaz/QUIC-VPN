@@ -2,18 +2,18 @@ package pkg
 
 import (
 	"context"
-	"fmt"
 	"log"
-	"time"
 
 	"QUIC-VPN/utils"
 
 	"github.com/quic-go/quic-go"
+	"github.com/songgao/water"
 )
 
-func Server() {
+func Server(ifce *water.Interface) {
+
 	// server address
-	addr := "127.0.0.1:4242"
+	addr := "0.0.0.0:4242"
 
 	// Create a QUIC listener
 	listener, err := quic.ListenAddr(addr, utils.GenerateTLSConfigServer(), nil)
@@ -37,11 +37,22 @@ func Server() {
 
 			data := make([]byte, 1500)
 			for n, _ := stream.Read(data); n > 0; n, _ = stream.Read(data) {
+				ifce.Write(data[:n])
+			}
 
-				fmt.Printf("\033[32mServer: Received '%s'\033[0m\n", data)
-				time.Sleep(1 * time.Second)
+			packet := make([]byte, 1500)
+			for {
+				n, err := ifce.Read(packet)
+				if err != nil {
+					log.Fatal(err)
+				}
+				_, err = stream.Write(packet[:n])
+				if err != nil {
+					log.Fatal(err)
+				}
 			}
 		}()
+
 	}
 
 }

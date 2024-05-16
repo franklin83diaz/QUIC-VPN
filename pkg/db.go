@@ -2,6 +2,7 @@ package pkg
 
 import (
 	"QUIC-VPN/internal"
+	"log"
 	"os"
 	"path/filepath"
 
@@ -34,12 +35,12 @@ func Connect() *gorm.DB {
 
 	err := EnsureDBFileExists(dbPath)
 	if err != nil {
-		panic("failed to ensure database file exists: " + err.Error())
+		log.Fatalln("failed to ensure database file exists: " + err.Error())
 	}
 
 	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
+		log.Fatalln("failed to connect database")
 	}
 	return db
 }
@@ -50,6 +51,6 @@ var Db = Connect()
 func CreateTable(table interface{}, db *gorm.DB) {
 	err := db.AutoMigrate(table)
 	if err != nil {
-		panic("failed to create table")
+		log.Fatalln("failed to create table")
 	}
 }
