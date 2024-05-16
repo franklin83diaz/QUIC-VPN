@@ -7,7 +7,7 @@ import (
 
 func main() {
 
-	pkg.CreateVNet()
+	pkg.CreateTun("192.168.45.1/24")
 	time.Sleep(5 * time.Second)
 	//pkg.DeleteVNet()
 

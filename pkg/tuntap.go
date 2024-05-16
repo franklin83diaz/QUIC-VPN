@@ -9,7 +9,7 @@ import (
 )
 
 // Create a new TUN device
-func CreateVNet() {
+func CreateTun(ipServer string) {
 
 	ifce, err := water.New(water.Config{
 		DeviceType: water.TUN,
@@ -33,7 +33,7 @@ func CreateVNet() {
 	}
 
 	// Set the IP address and netmask for the TUN device
-	SetIp("192.168.45.1/24", ifce.Name())
+	SetIp(ipServer, ifce.Name())
 
 	packet := make([]byte, 9000)
 	for {

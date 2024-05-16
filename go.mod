@@ -4,7 +4,12 @@ go 1.22.1
 
 require github.com/quic-go/quic-go v0.43.1
 
-require github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
+require (
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.5 // indirect
+	github.com/mattn/go-sqlite3 v1.14.17 // indirect
+	github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df // indirect
+)
 
 require (
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
@@ -19,4 +24,6 @@ require (
 	golang.org/x/net v0.10.0 // indirect
 	golang.org/x/sys v0.8.0 // indirect
 	golang.org/x/tools v0.9.1 // indirect
+	gorm.io/driver/sqlite v1.5.5
+	gorm.io/gorm v1.25.10
 )
