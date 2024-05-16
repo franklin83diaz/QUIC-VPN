@@ -1,6 +1,7 @@
 package pkg
 
 import (
+	"fmt"
 	"log"
 
 	"github.com/songgao/water"
@@ -18,7 +19,7 @@ func CreateTun(ipServer string) *water.Interface {
 		log.Fatalln(err)
 	}
 
-	log.Printf("Interface Name: %s\n", ifce.Name())
+	fmt.Printf("Interface Name: %s\n", ifce.Name())
 
 	tun := &netlink.Tuntap{
 		LinkAttrs: netlink.LinkAttrs{

@@ -5,6 +5,7 @@
         "ifce",
         "netlink",
         "songgao",
-        "TUNTAP"
+        "TUNTAP",
+        "Usermane"
     ]
 }

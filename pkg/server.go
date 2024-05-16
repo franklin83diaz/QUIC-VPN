@@ -35,18 +35,22 @@ func Server(ifce *water.Interface) {
 
 			defer stream.Close()
 
-			data := make([]byte, 1500)
-			for n, _ := stream.Read(data); n > 0; n, _ = stream.Read(data) {
-				ifce.Write(data[:n])
-			}
+			// Read data from the stream and write it to the tun interface
+			go func() {
+				dataIn := make([]byte, 1500)
+				for n, _ := stream.Read(dataIn); n > 0; n, _ = stream.Read(dataIn) {
+					ifce.Write(dataIn[:n])
+				}
+			}()
 
-			packet := make([]byte, 1500)
+			// Read data from the tun interface and write it to the stream
+			dataOut := make([]byte, 1500)
 			for {
-				n, err := ifce.Read(packet)
+				n, err := ifce.Read(dataOut)
 				if err != nil {
 					log.Fatal(err)
 				}
-				_, err = stream.Write(packet[:n])
+				_, err = stream.Write(dataOut[:n])
 				if err != nil {
 					log.Fatal(err)
 				}

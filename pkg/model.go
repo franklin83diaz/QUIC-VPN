@@ -9,10 +9,13 @@ type Test struct {
 
 type User struct {
 	gorm.Model
-	Name   string
-	Last   int
-	Active bool `gorm:"default:false"`
-	Ip     string
+	Name         string
+	Last         string
+	Username     string
+	HashPassword string
+	Email        string
+	Active       bool `gorm:"default:false"`
+	Ip           string
 }
 
 type Network struct {

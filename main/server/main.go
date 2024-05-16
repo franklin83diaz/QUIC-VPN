@@ -9,9 +9,10 @@ import (
 )
 
 func main() {
+	// Get database connection
+	db := pkg.Db
 
 	// Find network
-	db := pkg.Db
 	network := pkg.Network{}
 
 	db.AutoMigrate(&network)
@@ -38,5 +39,33 @@ func main() {
 
 	// Connection QUIC listener
 	pkg.Server(ifce)
+
+	// Create user admin for debug
+	// GODEBUG := os.Getenv("GODEBUG")
+	// if GODEBUG == "1" {
+
+	// 	user := pkg.User{}
+	// 	db.AutoMigrate(&user)
+
+	// 	tx := db.Where("username = ?", "admin").First(&user)
+	// 	if tx.Error != nil {
+	// 		if tx.Error == gorm.ErrRecordNotFound {
+	// 			//create user
+	// 			user = pkg.User{
+	// 				Name:         "admin",
+	// 				Last:         "admin",
+	// 				Username:     "admin",
+	// 				HashPassword: utils.HashPassword("admin"),
+	// 				Email:        "admin@noemail.com",
+	// 				Active:       true,
+	// 				Ip:           "192.168.145.254",
+	// 			}
+
+	// 			db.Create(&user)
+	// 		} else {
+	// 			fmt.Printf("Error : %v\n", tx.Error)
+	// 		}
+	// 	}
+	// }
 
 }
