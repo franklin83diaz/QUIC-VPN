@@ -5,10 +5,13 @@ import (
 	"QUIC-VPN/pkg"
 	"QUIC-VPN/utils"
 	"fmt"
+	"log"
 	"strings"
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
+
 	// Get database connection
 	db := pkg.Db
 

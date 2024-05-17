@@ -3,10 +3,12 @@ package main
 import (
 	"QUIC-VPN/pkg"
 	"fmt"
+	"log"
 	"time"
 )
 
 func main() {
+	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	var ip string
 	//ask for the server
