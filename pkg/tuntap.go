@@ -9,7 +9,7 @@ import (
 )
 
 // Create a new TUN device
-func CreateTun(ipServer string) *water.Interface {
+func CreateTun(cidr string) *water.Interface {
 
 	ifce, err := water.New(water.Config{
 		DeviceType: water.TUN,
@@ -33,7 +33,7 @@ func CreateTun(ipServer string) *water.Interface {
 	}
 
 	// Set the IP address and netmask for the TUN device
-	SetIp(ipServer, ifce.Name())
+	SetIp(cidr, ifce.Name())
 
 	return ifce
 
