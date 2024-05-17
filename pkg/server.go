@@ -39,7 +39,13 @@ func Server(ifce *water.Interface) {
 			go func() {
 				dataIn := make([]byte, 1500)
 				for n, _ := stream.Read(dataIn); n > 0; n, _ = stream.Read(dataIn) {
-					ifce.Write(dataIn[:n])
+					_, err := ifce.Write(dataIn[:n])
+					if err != nil {
+						log.Println(err)
+					}
+					//TODO: Limit lantency and speed here
+					//time.Sleep(10 * time.Millisecond)
+
 				}
 			}()
 
@@ -54,6 +60,8 @@ func Server(ifce *water.Interface) {
 				if err != nil {
 					log.Fatal(err)
 				}
+				//TODO: Limit lantency and speed here
+				//time.Sleep(10 * time.Millisecond)
 			}
 		}()
 
