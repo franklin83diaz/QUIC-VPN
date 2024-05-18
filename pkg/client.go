@@ -4,6 +4,7 @@ import (
 	"QUIC-VPN/utils"
 	"context"
 	"log"
+	"time"
 
 	"github.com/quic-go/quic-go"
 	"github.com/songgao/water"
@@ -14,8 +15,14 @@ func Client(ip string, port string, ifce *water.Interface) {
 	//cliente QUIC
 	addr := ip + ":" + port
 
+	// Configuración QUIC
+	quicConfig := &quic.Config{
+		MaxIdleTimeout:       60 * time.Second,
+		HandshakeIdleTimeout: 60 * time.Second,
+	}
+
 	// Create a QUIC session
-	con, err := quic.DialAddr(context.Background(), addr, utils.GenerateTLSConfigClient(), nil)
+	con, err := quic.DialAddr(context.Background(), addr, utils.GenerateTLSConfigClient(), quicConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -30,20 +37,16 @@ func Client(ip string, port string, ifce *water.Interface) {
 
 		dataIn := make([]byte, 1500)
 
-		for {
-			// Read from the TUN interface
-			n, err := ifce.Read(dataIn)
-			if err != nil {
-				log.Fatal(err)
-			}
+		go func() {
 
-			// Send the data to the QUIC stream
-			_, err = stream.Write(dataIn[:n])
-			if err != nil {
-				log.Fatal(err)
-			}
+			for n, _ := stream.Read(dataIn); n > 0; n, _ = stream.Read(dataIn) {
+				_, err := ifce.Write(dataIn[:n])
+				if err != nil {
+					log.Println(err)
+				}
 
-		}
+			}
+		}()
 	}()
 
 	dataOut := make([]byte, 1500)
