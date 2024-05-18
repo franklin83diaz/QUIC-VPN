@@ -1,26 +1,34 @@
 package pkg
 
 import (
+	"bufio"
 	"context"
+	"fmt"
 	"log"
+	"os"
+	"sync"
 
 	"QUIC-VPN/utils"
 
 	"github.com/quic-go/quic-go"
-	"github.com/songgao/water"
 )
 
-func Server(ifce *water.Interface) {
+var (
+	mutex sync.Mutex
+)
+
+func Server(tunFile *os.File) {
 
 	// server address
 	addr := "0.0.0.0:4242"
 
 	// Create a QUIC listener
-	listener, err := quic.ListenAddr(addr, utils.GenerateTLSConfigServer(), nil)
+	listener, err := quic.ListenAddr(addr, utils.GenerateTLSConfigServer(), utils.GenerateQUICConfig())
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer listener.Close()
+	defer tunFile.Close()
 	for {
 		conn, err := listener.Accept(context.Background())
 		if err != nil {
@@ -28,6 +36,7 @@ func Server(ifce *water.Interface) {
 		}
 
 		go func() {
+
 			stream, err := conn.AcceptStream(context.Background())
 			if err != nil {
 				log.Fatal(err)
@@ -35,32 +44,80 @@ func Server(ifce *water.Interface) {
 
 			defer stream.Close()
 
-			// Read data from the stream and write it to the tun interface
+			fmt.Println("New connection!")
+
 			go func() {
+
 				dataIn := make([]byte, 1500)
-				for n, _ := stream.Read(dataIn); n > 0; n, _ = stream.Read(dataIn) {
-					_, err := ifce.Write(dataIn[:n])
+
+				for {
+					// Read from the TUN interface
+					n, err := tunFile.Read(dataIn)
 					if err != nil {
-						log.Println(err)
+						log.Fatal(err)
+					}
+
+					// Send the data to the QUIC stream
+					_, err = stream.Write(dataIn[:n])
+					if err != nil {
+						log.Fatal(err)
 					}
 
 				}
 			}()
 
-			// Read data from the tun interface and write it to the stream
-			dataOut := make([]byte, 1500)
+			dataOut := make([]byte, 4096)
+			reader := bufio.NewReader(stream)
+			r := 0
+
 			for {
-				n, err := ifce.Read(dataOut)
+
+				b, _ := reader.Peek(5)
+				bufferedLen := reader.Buffered()
+				totalLength := utils.GetToalLength(b)
+				fmt.Println("Buffered Length: ", bufferedLen)
+				fmt.Println("Total Length: ", totalLength)
+
+				if totalLength == 0 {
+					reader.Read(dataOut[:bufferedLen])
+					bb, _ := reader.Peek(48)
+					fmt.Println("Peek: ", bb)
+					fmt.Println("Peek: ", string(bb))
+					continue
+				}
+
+				if uint16(bufferedLen) < totalLength {
+					if r < 5 {
+						r++
+						continue
+					}
+					r = 0
+
+				}
+
+				// Read from the QUIC stream
+				n, err := reader.Read(dataOut[:totalLength])
+
 				if err != nil {
 					log.Fatal(err)
 				}
-				_, err = stream.Write(dataOut[:n])
+
+				// Validar el paquete IP
+				err = utils.ValidateIPPacket(dataOut[:n])
 				if err != nil {
-					log.Fatal(err)
+					fmt.Println(err)
+
 				}
-				//TODO: Limit lantency and speed here
-				//time.Sleep(10 * time.Millisecond)
-				// get bytes written and calculate speed
+
+				// Write to the TUN interface
+				_, err = tunFile.Write(dataOut[:n])
+				if err != nil {
+
+					fmt.Println(n)
+					fmt.Println("-")
+					fmt.Println(err)
+
+				}
 
 			}
 		}()

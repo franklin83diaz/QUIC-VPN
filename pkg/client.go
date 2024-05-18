@@ -3,26 +3,20 @@ package pkg
 import (
 	"QUIC-VPN/utils"
 	"context"
+	"fmt"
 	"log"
-	"time"
+	"os"
 
 	"github.com/quic-go/quic-go"
-	"github.com/songgao/water"
 )
 
 // Client
-func Client(ip string, port string, ifce *water.Interface) {
+func Client(ip string, port string, tunFile *os.File) {
 	//cliente QUIC
 	addr := ip + ":" + port
 
-	// Configuración QUIC
-	quicConfig := &quic.Config{
-		MaxIdleTimeout:       60 * time.Second,
-		HandshakeIdleTimeout: 60 * time.Second,
-	}
-
 	// Create a QUIC session
-	con, err := quic.DialAddr(context.Background(), addr, utils.GenerateTLSConfigClient(), quicConfig)
+	con, err := quic.DialAddr(context.Background(), addr, utils.GenerateTLSConfigClient(), utils.GenerateQUICConfig())
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -33,25 +27,35 @@ func Client(ip string, port string, ifce *water.Interface) {
 		log.Fatal(err)
 	}
 
+	defer tunFile.Close()
+
 	go func() {
 
-		dataIn := make([]byte, 1500)
+		dataIn := make([]byte, 4096)
 
-		go func() {
-
-			for n, _ := stream.Read(dataIn); n > 0; n, _ = stream.Read(dataIn) {
-				_, err := ifce.Write(dataIn[:n])
-				if err != nil {
-					log.Println(err)
-				}
-
+		for {
+			// Read from the TUN interface
+			n, err := tunFile.Read(dataIn)
+			if err != nil {
+				log.Fatal(err)
 			}
-		}()
+			if n == 0 {
+				continue
+			}
+
+			//Send the data to the QUIC stream
+			_, err = stream.Write(dataIn[:n])
+			if err != nil {
+				log.Fatal(err)
+			}
+
+		}
 	}()
 
 	dataOut := make([]byte, 1500)
 
 	for {
+
 		// Read from the QUIC stream
 		n, err := stream.Read(dataOut)
 		if err != nil {
@@ -59,9 +63,11 @@ func Client(ip string, port string, ifce *water.Interface) {
 		}
 
 		// Write to the TUN interface
-		_, err = ifce.Write(dataOut[:n])
+		_, err = tunFile.Write(dataOut[:n])
 		if err != nil {
-			log.Fatal(err)
+			fmt.Println(n)
+			fmt.Println("-")
+			//log.Fatal(err)
 		}
 
 	}

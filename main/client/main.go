@@ -2,23 +2,20 @@ package main
 
 import (
 	"QUIC-VPN/pkg"
-	"fmt"
 	"log"
+	"os"
 	"time"
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
-	var ip string
-	//ask for the server
-	fmt.Print("Ip del servidor: ")
-	fmt.Scanln(&ip)
+	ip := os.Args[1]
 
 	// Create netowrk interface
-	ifce := pkg.CreateTun("192.168.45.254/24")
+	osFile := pkg.CreateTun("192.168.45.254/24")
 
-	pkg.Client(ip, "4242", ifce)
+	pkg.Client(ip, "4242", osFile)
 
 	time.Sleep(10 * time.Second)
 

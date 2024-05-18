@@ -3,42 +3,30 @@ package pkg
 import (
 	"fmt"
 	"log"
+	"os"
+	"unsafe"
 
-	"github.com/songgao/water"
 	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 )
 
 // Create a new TUN device
-func CreateTun(cidr string) *water.Interface {
+func CreateTun(cidr string) *os.File {
 
 	fmt.Println("TUN interface created successfully")
 
-	ifce, err := water.New(water.Config{
-		DeviceType: water.TUN,
-		PlatformSpecificParams: water.PlatformSpecificParams{
-			MultiQueue: true,
-		},
-	})
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
 	tun := &netlink.Tuntap{
 		LinkAttrs: netlink.LinkAttrs{
-			Name: ifce.Name(),
+			Name:   "tun0",
+			MTU:    1500,
+			TxQLen: 1000,
 		},
 		Mode: netlink.TUNTAP_MODE_TUN,
 	}
 
-	// Change MTU
-	// if err := netlink.LinkSetMTU(tun, 1350); err != nil {
-	// 	log.Fatalf("Failed to set MTU: %v", err)
-	// }
-
-	// Qlen to 1000
-	if err := netlink.LinkSetTxQLen(tun, 100); err != nil {
-		log.Fatalf("Failed to set TxQLen: %v", err)
+	// Add the interface to the system
+	if err := netlink.LinkAdd(tun); err != nil {
+		log.Fatalf("Failed to add the interface: %v", err)
 	}
 
 	// Bring the interface up
@@ -47,9 +35,26 @@ func CreateTun(cidr string) *water.Interface {
 	}
 
 	// Set the IP address and netmask for the TUN device
-	SetIp(cidr, ifce.Name())
+	SetIp(cidr, "tun0")
 
-	return ifce
+	// open TUN
+	tunFile, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
+	if err != nil {
+		log.Panic("Error open TUN: %v\n", err)
+
+	}
+
+	// Configure TUN
+	var ifr [unix.IFNAMSIZ + 64]byte
+	copy(ifr[:unix.IFNAMSIZ], []byte("tun0\x00"))
+	*(*uint16)(unsafe.Pointer(&ifr[unix.IFNAMSIZ])) = unix.IFF_TUN | unix.IFF_NO_PI
+
+	_, _, errno := unix.Syscall(unix.SYS_IOCTL, tunFile.Fd(), uintptr(unix.TUNSETIFF), uintptr(unsafe.Pointer(&ifr[0])))
+	if errno != 0 {
+		log.Panic("Error configure TUN: %v\n", errno)
+	}
+
+	return tunFile
 
 }
 
