@@ -42,6 +42,7 @@ func Client(ip string, port string, ifce *water.Interface) {
 			if err != nil {
 				log.Fatal(err)
 			}
+
 		}
 	}()
 
@@ -59,6 +60,7 @@ func Client(ip string, port string, ifce *water.Interface) {
 		if err != nil {
 			log.Fatal(err)
 		}
+
 	}
 
 }

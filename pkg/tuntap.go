@@ -11,25 +11,39 @@ import (
 // Create a new TUN device
 func CreateTun(cidr string) *water.Interface {
 
+	fmt.Println("TUN interface created successfully")
+
 	ifce, err := water.New(water.Config{
 		DeviceType: water.TUN,
+		PlatformSpecificParams: water.PlatformSpecificParams{
+			MultiQueue: true,
+		},
 	})
 
 	if err != nil {
 		log.Fatalln(err)
 	}
 
-	fmt.Printf("Interface Name: %s\n", ifce.Name())
-
 	tun := &netlink.Tuntap{
 		LinkAttrs: netlink.LinkAttrs{
 			Name: ifce.Name(),
-			MTU:  1500,
-		}}
+		},
+		Mode: netlink.TUNTAP_MODE_TUN,
+	}
 
-	// Set the IP address and netmask for the TUN device
+	// Change MTU
+	// if err := netlink.LinkSetMTU(tun, 1350); err != nil {
+	// 	log.Fatalf("Failed to set MTU: %v", err)
+	// }
+
+	// Qlen to 1000
+	if err := netlink.LinkSetTxQLen(tun, 100); err != nil {
+		log.Fatalf("Failed to set TxQLen: %v", err)
+	}
+
+	// Bring the interface up
 	if err := netlink.LinkSetUp(tun); err != nil {
-		log.Fatalln(err)
+		log.Fatalf("Failed to bring up the interface: %v", err)
 	}
 
 	// Set the IP address and netmask for the TUN device

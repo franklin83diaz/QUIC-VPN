@@ -43,9 +43,6 @@ func Server(ifce *water.Interface) {
 					if err != nil {
 						log.Println(err)
 					}
-					//TODO: Limit lantency and speed here
-					//time.Sleep(10 * time.Millisecond)
-					// get bytes written and calculate speed
 
 				}
 			}()
@@ -64,6 +61,7 @@ func Server(ifce *water.Interface) {
 				//TODO: Limit lantency and speed here
 				//time.Sleep(10 * time.Millisecond)
 				// get bytes written and calculate speed
+
 			}
 		}()
 
