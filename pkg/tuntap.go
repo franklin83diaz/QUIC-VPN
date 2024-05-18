@@ -40,7 +40,7 @@ func CreateTun(cidr string) *os.File {
 	// open TUN
 	tunFile, err := os.OpenFile("/dev/net/tun", os.O_RDWR, 0)
 	if err != nil {
-		log.Panic("Error open TUN: %v\n", err)
+		log.Panic("error open TUN: ", err)
 
 	}
 
@@ -51,7 +51,7 @@ func CreateTun(cidr string) *os.File {
 
 	_, _, errno := unix.Syscall(unix.SYS_IOCTL, tunFile.Fd(), uintptr(unix.TUNSETIFF), uintptr(unsafe.Pointer(&ifr[0])))
 	if errno != 0 {
-		log.Panic("Error configure TUN: %v\n", errno)
+		log.Panic("rror configure TUN: ", errno)
 	}
 
 	return tunFile

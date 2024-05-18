@@ -48,7 +48,7 @@ func Server(tunFile *os.File) {
 
 			go func() {
 
-				dataIn := make([]byte, 1500)
+				dataIn := make([]byte, 65536)
 
 				for {
 					// Read from the TUN interface
@@ -66,17 +66,23 @@ func Server(tunFile *os.File) {
 				}
 			}()
 
-			dataOut := make([]byte, 4096)
-			reader := bufio.NewReader(stream)
+			dataOut := make([]byte, 65536)
+			reader := bufio.NewReaderSize(stream, 65536)
 			r := 0
+			max := 0
 
 			for {
+				fmt.Println("Max: ", max)
 
 				b, _ := reader.Peek(5)
 				bufferedLen := reader.Buffered()
-				totalLength := utils.GetToalLength(b)
-				fmt.Println("Buffered Length: ", bufferedLen)
-				fmt.Println("Total Length: ", totalLength)
+				totalLength := utils.GetTotalLength(b)
+				// fmt.Println("Buffered Length: ", bufferedLen)
+				// fmt.Println("Total Length: ", totalLength)
+
+				if totalLength > uint16(max) {
+					max = int(totalLength)
+				}
 
 				if totalLength == 0 {
 					reader.Read(dataOut[:bufferedLen])
@@ -87,11 +93,12 @@ func Server(tunFile *os.File) {
 				}
 
 				if uint16(bufferedLen) < totalLength {
-					if r < 5 {
+					if r < 10 {
 						r++
 						continue
 					}
 					r = 0
+					totalLength = uint16(bufferedLen)
 
 				}
 
@@ -105,8 +112,8 @@ func Server(tunFile *os.File) {
 				// Validar el paquete IP
 				err = utils.ValidateIPPacket(dataOut[:n])
 				if err != nil {
-					fmt.Println(err)
-
+					continue
+					//fmt.Println(err)
 				}
 
 				// Write to the TUN interface

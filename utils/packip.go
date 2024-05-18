@@ -3,10 +3,9 @@ package utils
 import (
 	"encoding/binary"
 	"errors"
-	"fmt"
 )
 
-func GetToalLength(packet []byte) uint16 {
+func GetTotalLength(packet []byte) uint16 {
 	return binary.BigEndian.Uint16(packet[2:4])
 }
 
@@ -28,7 +27,6 @@ func ValidateIPPacket(packet []byte) error {
 
 	totalLen := binary.BigEndian.Uint16(packet[2:4])
 	if len(packet) < int(totalLen) {
-		fmt.Printf("totalLen is %v ,", totalLen)
 		return errors.New("packet is shorter than the length of the IP packet")
 	}
 

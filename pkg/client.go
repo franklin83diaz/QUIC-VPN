@@ -31,7 +31,7 @@ func Client(ip string, port string, tunFile *os.File) {
 
 	go func() {
 
-		dataIn := make([]byte, 4096)
+		dataIn := make([]byte, 65536)
 
 		for {
 			// Read from the TUN interface
@@ -40,6 +40,12 @@ func Client(ip string, port string, tunFile *os.File) {
 				log.Fatal(err)
 			}
 			if n == 0 {
+				continue
+			}
+
+			err = utils.ValidateIPPacket(dataIn[:n])
+			if err != nil {
+				fmt.Println(err)
 				continue
 			}
 
@@ -52,7 +58,7 @@ func Client(ip string, port string, tunFile *os.File) {
 		}
 	}()
 
-	dataOut := make([]byte, 1500)
+	dataOut := make([]byte, 65536)
 
 	for {
 
