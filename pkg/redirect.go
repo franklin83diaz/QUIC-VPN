@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/quic-go/quic-go"
 )
@@ -20,10 +21,19 @@ func redirectTunToQuic(tunFile *os.File, stream quic.Stream) {
 			log.Fatal(err)
 		}
 
-		ok := utils.IsIPv4(dataIn[:n])
-		if !ok {
+		totalLength := utils.GetTotalLength(dataIn[:n])
+		datalen := len(dataIn[:n])
+
+		// check if the packet is valid
+		err = utils.ValidateIPPacket(dataIn[:n])
+		if err != nil {
+			fmt.Println(err)
 			continue
 		}
+
+		fmt.Println("Total Length: ", totalLength)
+		fmt.Println("Data Length: ", datalen)
+		fmt.Println("--------------------")
 
 		// Send the data to the QUIC stream
 		_, err = stream.Write(dataIn[:n])
@@ -37,58 +47,48 @@ func redirectTunToQuic(tunFile *os.File, stream quic.Stream) {
 func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
 	dataOut := make([]byte, 65536)
 	reader := bufio.NewReaderSize(stream, 65536)
-	r := 0
-	max := 0
+	totalLength := uint16(0)
 
 	for {
-		fmt.Println("Max: ", max)
 
 		b, _ := reader.Peek(5)
 		bufferedLen := reader.Buffered()
-		totalLength := utils.GetTotalLength(b)
-		// fmt.Println("Buffered Length: ", bufferedLen)
-		// fmt.Println("Total Length: ", totalLength)
+		totalLength = utils.GetTotalLength(b)
 
-		if totalLength > uint16(max) {
-			max = int(totalLength)
-		}
-
-		if totalLength == 0 {
-			reader.Read(dataOut[:bufferedLen])
-			bb, _ := reader.Peek(48)
-			fmt.Println("Peek: ", bb)
-			fmt.Println("Peek: ", string(bb))
-			continue
-		}
+		// color red
+		fmt.Println("\033[31m")
+		fmt.Println("Buffered: ", bufferedLen)
+		fmt.Println("Total: ", totalLength)
+		fmt.Println("--------------------")
+		// color reset
+		fmt.Print("\033[0m")
 
 		if uint16(bufferedLen) < totalLength {
-			if r < 10 {
-				r++
-				continue
-			}
-			r = 0
-			totalLength = uint16(bufferedLen)
-
+			time.Sleep(500 * time.Millisecond)
+			bufferedLen = reader.Buffered()
+			fmt.Println("Buffered: ", bufferedLen)
+			//TODO: Fix this
+			log.Println("The problem is that the buffer does not enter data again until it is read.")
+			continue
 		}
 
 		// Read from the QUIC stream
 		n, err := reader.Read(dataOut[:totalLength])
-
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		// Validar el paquete IP
 		err = utils.ValidateIPPacket(dataOut[:n])
 		if err != nil {
+			fmt.Println(err)
+			fmt.Println("packet length: ", totalLength)
+			fmt.Println("data length: ", n)
 			continue
-			//fmt.Println(err)
 		}
 
 		// Write to the TUN interface
 		_, err = tunFile.Write(dataOut[:n])
 		if err != nil {
-
 			fmt.Println(n)
 			fmt.Println("-")
 			fmt.Println(err)
