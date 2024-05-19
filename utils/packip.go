@@ -5,6 +5,10 @@ import (
 	"errors"
 )
 
+func IsIPv4(packet []byte) bool {
+	return packet[0]>>4 == 4
+}
+
 func GetTotalLength(packet []byte) uint16 {
 	return binary.BigEndian.Uint16(packet[2:4])
 }

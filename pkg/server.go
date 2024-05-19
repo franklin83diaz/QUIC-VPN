@@ -57,6 +57,11 @@ func Server(tunFile *os.File) {
 						log.Fatal(err)
 					}
 
+					ok := utils.IsIPv4(dataIn[:n])
+					if !ok {
+						continue
+					}
+
 					// Send the data to the QUIC stream
 					_, err = stream.Write(dataIn[:n])
 					if err != nil {
