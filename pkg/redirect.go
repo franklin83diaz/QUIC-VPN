@@ -52,6 +52,7 @@ func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
 
 		b, _ := reader.Peek(5)
 		bufferedLen := reader.Buffered()
+		//TODO: Change to int
 		totalLength = utils.GetTotalLength(b)
 
 		// color red
@@ -74,6 +75,7 @@ func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
 
 		read:
 			// Read data from the QUIC stream
+			//c: Change this for solve the problem when  missing data is too small and more than two packets
 			readInt, err := reader.Read(dataOut[tt:(lengthToRead + uint16(tt))])
 			if err != nil {
 				log.Fatal(err)
