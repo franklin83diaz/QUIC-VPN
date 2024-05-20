@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 
 	"github.com/quic-go/quic-go"
 )
@@ -30,7 +29,7 @@ func redirectTunToQuic(tunFile *os.File, stream quic.Stream) {
 			fmt.Println(err)
 			continue
 		}
-
+		fmt.Println("--------read-tun------------")
 		fmt.Println("Total Length: ", totalLength)
 		fmt.Println("Data Length: ", datalen)
 		fmt.Println("--------------------")
@@ -63,33 +62,61 @@ func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
 		// color reset
 		fmt.Print("\033[0m")
 
+		// Check if the buffer is less than the total length
 		if uint16(bufferedLen) < totalLength {
-			time.Sleep(500 * time.Millisecond)
+			lengthToRead := uint16(bufferedLen)
 			bufferedLen = reader.Buffered()
+			tt := 0
+			// color green
+			fmt.Println("\033[32m")
 			fmt.Println("Buffered: ", bufferedLen)
-			//TODO: Fix this
-			log.Println("The problem is that the buffer does not enter data again until it is read.")
-			continue
+			fmt.Println("\033[0m")
+
+		read:
+			// Read data from the QUIC stream
+			readInt, err := reader.Read(dataOut[tt:(lengthToRead + uint16(tt))])
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			// color green
+			fmt.Println("\033[32m")
+			fmt.Println("lengthToRead: ", lengthToRead)
+			fmt.Println("\033[0m")
+
+			// data missing
+			lengthToRead = totalLength - uint16(lengthToRead)
+			tt += readInt
+			fmt.Println("\033[32m")
+			fmt.Println("tt: ", tt, " < totalLength: ", totalLength)
+			fmt.Println("\033[0m")
+			if tt < int(totalLength) {
+				goto read
+			}
+
+		} else {
+			// Read from the QUIC stream
+			_, err := reader.Read(dataOut[:totalLength])
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 
-		// Read from the QUIC stream
-		n, err := reader.Read(dataOut[:totalLength])
+		err := utils.ValidateIPPacket(dataOut[:totalLength])
 		if err != nil {
-			log.Fatal(err)
-		}
-
-		err = utils.ValidateIPPacket(dataOut[:n])
-		if err != nil {
+			//color yellow
+			fmt.Println("\033[33m")
 			fmt.Println(err)
 			fmt.Println("packet length: ", totalLength)
-			fmt.Println("data length: ", n)
+			fmt.Println("data length: ", totalLength)
+			fmt.Println("\033[0m")
 			continue
 		}
 
 		// Write to the TUN interface
-		_, err = tunFile.Write(dataOut[:n])
+		_, err = tunFile.Write(dataOut[:totalLength])
 		if err != nil {
-			fmt.Println(n)
+			fmt.Println(totalLength)
 			fmt.Println("-")
 			fmt.Println(err)
 

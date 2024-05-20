@@ -15,6 +15,8 @@ func GenerateQUICConfig() *quic.Config {
 		MaxIncomingStreams:    1,
 		MaxIncomingUniStreams: 1,
 		KeepAlivePeriod:       30,
+		// InitialStreamReceiveWindow: 20 * 1024 * 1024,
+		// MaxConnectionReceiveWindow: 20 * 1024 * 1024,
 	}
 
 	return quicConfig
