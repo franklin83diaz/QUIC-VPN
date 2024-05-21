@@ -3,9 +3,9 @@ package pkg
 import (
 	"QUIC-VPN/utils"
 	"encoding/binary"
-	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/quic-go/quic-go"
 )
@@ -21,7 +21,11 @@ func redirectTunToQuic(tunFile *os.File, stream quic.Stream) {
 			log.Fatal(err)
 		}
 
-		fmt.Println("\033[32m", "n: ", n, "\033[0m")
+		if !utils.IsIPv4(dataIn[2:]) {
+			continue
+		}
+
+		//fmt.Println("\033[32m", "n: ", n, "\033[0m")
 
 		binary.BigEndian.PutUint16(dataIn[0:2], uint16(n))
 
@@ -39,46 +43,26 @@ func redirectTunToQuic(tunFile *os.File, stream quic.Stream) {
 }
 
 func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
-	dataOut := make([]byte, 1500)
-	preStreamLen := 0
+	data := make([]byte, 1500)
 
 	for {
-		temp := make([]byte, 1500)
-		packetVpnLen := make([]byte, 2)
-		_, err := stream.Read(packetVpnLen)
+		lenchunk := make([]byte, 2)
+		stream.Read(lenchunk)
+
+		lenchunkInt := int(binary.BigEndian.Uint16(lenchunk))
+		i, _ := stream.Read(data[:lenchunkInt])
+
+		if i < lenchunkInt {
+			time.Sleep(1 * time.Millisecond)
+		}
+
+		stream.Read(data[i:lenchunkInt])
+
+		// Write to the TUN interface
+		_, err := tunFile.Write(data[:lenchunkInt])
 		if err != nil {
 			log.Fatal(err)
 		}
-		packetVpnLenInt := int(binary.BigEndian.Uint16(packetVpnLen))
-		fmt.Println("packetVpnLenInt: ", packetVpnLenInt)
-
-		streamLen, _ := stream.Read(temp)
-
-		if streamLen < packetVpnLenInt {
-			copy(dataOut, temp[preStreamLen:streamLen+preStreamLen])
-			preStreamLen = streamLen
-			continue
-		} else {
-			copy(dataOut, temp[preStreamLen:streamLen+preStreamLen])
-		}
-		preStreamLen = 0
-
-		err = utils.ValidateIPPacket(dataOut[:packetVpnLenInt])
-		if err != nil {
-			continue
-		}
-
-		copyDataOut := make([]byte, packetVpnLenInt)
-		copy(copyDataOut, dataOut[:packetVpnLenInt])
-
-		go func(data []byte) {
-
-			// Write to the TUN interface
-			_, err = tunFile.Write(copyDataOut)
-			if err != nil {
-				log.Println(err)
-			}
-		}(copyDataOut)
 
 	}
 }
