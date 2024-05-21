@@ -21,17 +21,28 @@ func Client(ip string, port string, tunFile *os.File) {
 		log.Fatal(err)
 	}
 
-	// Create a QUIC stream
-	stream, err := con.OpenStreamSync(context.Background())
-	if err != nil {
-		log.Fatal(err)
+	streams := []quic.Stream{}
+
+	for i := 0; i < 1; i++ {
+		// Create a QUIC stream
+		stream, err := con.OpenStream()
+		if err != nil {
+			log.Fatal(err)
+		}
+		// Send initial packet
+		stream.Write([]byte("initial"))
+		streams = append(streams, stream)
 	}
 
 	defer tunFile.Close()
-	defer stream.Close()
+	defer func() {
+		for _, stream := range streams {
+			stream.Close()
+		}
+	}()
 
-	go redirectTunToQuic(tunFile, stream)
-	go redirectQuicToTun(stream, tunFile)
+	go redirectTunToQuic(tunFile, streams)
+	go redirectQuicToTun(streams, tunFile)
 	ch <- true
 
 }

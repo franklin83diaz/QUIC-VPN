@@ -31,18 +31,27 @@ func Server(tunFile *os.File) {
 		}
 
 		go func() {
+			streams := []quic.Stream{}
 
-			stream, err := conn.AcceptStream(context.Background())
-			if err != nil {
-				log.Fatal(err)
+			for i := 0; i < 1; i++ {
+				stream, err := conn.AcceptStream(context.Background())
+				if err != nil {
+					log.Fatal(err)
+				}
+				streams = append(streams, stream)
+
 			}
 
-			defer stream.Close()
+			defer func() {
+				for _, stream := range streams {
+					stream.Close()
+				}
+			}()
 
 			fmt.Println("New connection!")
 
-			go redirectTunToQuic(tunFile, stream)
-			go redirectQuicToTun(stream, tunFile)
+			go redirectTunToQuic(tunFile, streams)
+			go redirectQuicToTun(streams, tunFile)
 
 			<-ch
 		}()

@@ -5,6 +5,10 @@ import (
 	"errors"
 )
 
+func TypeIPv(packet []byte) int {
+	return int(packet[0] >> 4)
+}
+
 func IsIPv4(packet []byte) bool {
 	return packet[0]>>4 == 4
 }
@@ -52,4 +56,13 @@ func validateChecksum(header []byte) bool {
 	}
 
 	return ^uint16(sum) == 0
+}
+
+// ipv6
+func IsIPv6(packet []byte) bool {
+	return packet[0]>>4 == 6
+}
+
+func GetTotalLengthIPv6(packet []byte) uint16 {
+	return binary.BigEndian.Uint16(packet[4:6])
 }

@@ -17,9 +17,11 @@ func CreateTun(cidr string) *os.File {
 
 	tun := &netlink.Tuntap{
 		LinkAttrs: netlink.LinkAttrs{
-			Name:   "tun0",
-			MTU:    1500,
-			TxQLen: 1000,
+			Name:        "tun0",
+			MTU:         1500,
+			TxQLen:      1000,
+			NumRxQueues: 8,
+			NumTxQueues: 8,
 		},
 		Mode: netlink.TUNTAP_MODE_TUN,
 	}

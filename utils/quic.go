@@ -10,11 +10,9 @@ func GenerateQUICConfig() *quic.Config {
 
 	// Configuración QUIC
 	quicConfig := &quic.Config{
-		MaxIdleTimeout:        60 * time.Second,
-		HandshakeIdleTimeout:  60 * time.Second,
-		MaxIncomingStreams:    1,
-		MaxIncomingUniStreams: 1,
-		KeepAlivePeriod:       30,
+		MaxIdleTimeout:       60 * time.Second,
+		HandshakeIdleTimeout: 60 * time.Second,
+		KeepAlivePeriod:      30 * time.Second,
 		// InitialStreamReceiveWindow: 20 * 1024 * 1024,
 		// MaxConnectionReceiveWindow: 20 * 1024 * 1024,
 	}
