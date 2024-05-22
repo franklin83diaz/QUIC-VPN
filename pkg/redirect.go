@@ -46,14 +46,12 @@ func redirectTunToQuic(tunFile *os.File, stream quic.Stream) {
 func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
 	dataOut := make([]byte, 65536)
 	reader := bufio.NewReaderSize(stream, 65536)
-	totalLength := uint16(0)
 
 	for {
 
 		b, _ := reader.Peek(5)
 		bufferedLen := reader.Buffered()
-		//TODO: Change to int
-		totalLength = utils.GetTotalLength(b)
+		totalLength := utils.GetTotalLength(b)
 
 		// color red
 		fmt.Println("\033[31m")
@@ -64,8 +62,8 @@ func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
 		fmt.Print("\033[0m")
 
 		// Check if the buffer is less than the total length
-		if uint16(bufferedLen) < totalLength {
-			lengthToRead := uint16(bufferedLen)
+		if bufferedLen < totalLength {
+			lengthToRead := bufferedLen
 			bufferedLen = reader.Buffered()
 			tt := 0
 			// color green
@@ -76,7 +74,7 @@ func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
 		read:
 			// Read data from the QUIC stream
 			//c: Change this for solve the problem when  missing data is too small and more than two packets
-			readInt, err := reader.Read(dataOut[tt:(lengthToRead + uint16(tt))])
+			readInt, err := reader.Read(dataOut[tt:(lengthToRead + tt)])
 			if err != nil {
 				log.Fatal(err)
 			}
@@ -87,7 +85,7 @@ func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
 			fmt.Println("\033[0m")
 
 			// data missing
-			lengthToRead = totalLength - uint16(lengthToRead)
+			lengthToRead = totalLength - lengthToRead
 			tt += readInt
 			fmt.Println("\033[32m")
 			fmt.Println("tt: ", tt, " < totalLength: ", totalLength)

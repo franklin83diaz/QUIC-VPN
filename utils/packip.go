@@ -9,8 +9,8 @@ func IsIPv4(packet []byte) bool {
 	return packet[0]>>4 == 4
 }
 
-func GetTotalLength(packet []byte) uint16 {
-	return binary.BigEndian.Uint16(packet[2:4])
+func GetTotalLength(packet []byte) int {
+	return int(binary.BigEndian.Uint16(packet[2:4]))
 }
 
 func ValidateIPPacket(packet []byte) error {
