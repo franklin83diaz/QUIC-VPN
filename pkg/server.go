@@ -2,7 +2,6 @@ package pkg
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 
@@ -32,17 +31,8 @@ func Server(tunFile *os.File) {
 
 		go func() {
 
-			stream, err := conn.AcceptStream(context.Background())
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			defer stream.Close()
-
-			fmt.Println("New connection!")
-
-			go redirectTunToQuic(tunFile, stream)
-			go redirectQuicToTun(stream, tunFile)
+			go redirectTunToQuic(tunFile, conn)
+			go redirectQuicToTun(conn, tunFile)
 
 			<-ch
 		}()

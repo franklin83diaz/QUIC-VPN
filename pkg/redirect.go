@@ -2,7 +2,7 @@ package pkg
 
 import (
 	"QUIC-VPN/utils"
-	"bufio"
+	"context"
 	"fmt"
 	"log"
 	"os"
@@ -10,8 +10,8 @@ import (
 	"github.com/quic-go/quic-go"
 )
 
-func redirectTunToQuic(tunFile *os.File, stream quic.Stream) {
-	dataIn := make([]byte, 65536)
+func redirectTunToQuic(tunFile *os.File, conn quic.Connection) {
+	dataIn := make([]byte, 6500)
 
 	for {
 		// Read from the TUN interface
@@ -20,109 +20,35 @@ func redirectTunToQuic(tunFile *os.File, stream quic.Stream) {
 			log.Fatal(err)
 		}
 
-		totalLength := utils.GetTotalLength(dataIn[:n])
-		datalen := len(dataIn[:n])
-
 		// check if the packet is valid
 		err = utils.ValidateIPPacket(dataIn[:n])
 		if err != nil {
 			fmt.Println(err)
 			continue
 		}
-		fmt.Println("--------read-tun------------")
-		fmt.Println("Total Length: ", totalLength)
-		fmt.Println("Data Length: ", datalen)
-		fmt.Println("--------------------")
 
-		// Send the data to the QUIC stream
-		_, err = stream.Write(dataIn[:n])
-		if err != nil {
-			log.Fatal(err)
-		}
+		go func() {
+			stream, _ := conn.OpenUniStreamSync(context.Background())
+			stream.Write(dataIn[:n])
+			stream.Close()
+		}()
 
 	}
 }
 
-func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
-	dataOut := make([]byte, 65536)
-	reader := bufio.NewReaderSize(stream, 65536)
-	totalLength := uint16(0)
+func redirectQuicToTun(conn quic.Connection, tunFile *os.File) {
 
 	for {
 
-		b, _ := reader.Peek(5)
-		bufferedLen := reader.Buffered()
-		//TODO: Change to int
-		totalLength = utils.GetTotalLength(b)
-
-		// color red
-		fmt.Println("\033[31m")
-		fmt.Println("Buffered: ", bufferedLen)
-		fmt.Println("Total: ", totalLength)
-		fmt.Println("--------------------")
-		// color reset
-		fmt.Print("\033[0m")
-
-		// Check if the buffer is less than the total length
-		if uint16(bufferedLen) < totalLength {
-			lengthToRead := uint16(bufferedLen)
-			bufferedLen = reader.Buffered()
-			tt := 0
-			// color green
-			fmt.Println("\033[32m")
-			fmt.Println("Buffered: ", bufferedLen)
-			fmt.Println("\033[0m")
-
-		read:
-			// Read data from the QUIC stream
-			//c: Change this for solve the problem when  missing data is too small and more than two packets
-			readInt, err := reader.Read(dataOut[tt:(lengthToRead + uint16(tt))])
-			if err != nil {
-				log.Fatal(err)
-			}
-
-			// color green
-			fmt.Println("\033[32m")
-			fmt.Println("lengthToRead: ", lengthToRead)
-			fmt.Println("\033[0m")
-
-			// data missing
-			lengthToRead = totalLength - uint16(lengthToRead)
-			tt += readInt
-			fmt.Println("\033[32m")
-			fmt.Println("tt: ", tt, " < totalLength: ", totalLength)
-			fmt.Println("\033[0m")
-			if tt < int(totalLength) {
-				goto read
-			}
-
-		} else {
-			// Read from the QUIC stream
-			_, err := reader.Read(dataOut[:totalLength])
-			if err != nil {
-				log.Fatal(err)
-			}
-		}
-
-		err := utils.ValidateIPPacket(dataOut[:totalLength])
-		if err != nil {
-			//color yellow
-			fmt.Println("\033[33m")
-			fmt.Println(err)
-			fmt.Println("packet length: ", totalLength)
-			fmt.Println("data length: ", totalLength)
-			fmt.Println("\033[0m")
-			continue
-		}
-
-		// Write to the TUN interface
-		_, err = tunFile.Write(dataOut[:totalLength])
-		if err != nil {
-			fmt.Println(totalLength)
-			fmt.Println("-")
-			fmt.Println(err)
-
-		}
-
+		stream, _ := conn.AcceptUniStream(context.Background())
+		go func() {
+			dataOut := make([]byte, 65000)
+			i, _ := stream.Read(dataOut)
+			fmt.Println(i)
+			x := utils.GetTotalLength(dataOut)
+			fmt.Println("TotalPacket: ", x)
+			tunFile.Write(dataOut)
+		}()
 	}
+
 }
