@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"log"
 	"os"
-	"time"
 
 	"github.com/quic-go/quic-go"
 )
@@ -50,19 +49,25 @@ func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
 		stream.Read(lenchunk)
 
 		lenchunkInt := int(binary.BigEndian.Uint16(lenchunk))
+
 		i, _ := stream.Read(data[:lenchunkInt])
 
-		if i < lenchunkInt {
-			time.Sleep(1 * time.Millisecond)
+		for i < lenchunkInt {
+			ii, _ := stream.Read(data[i:lenchunkInt])
+			i += ii
 		}
 
-		stream.Read(data[i:lenchunkInt])
+		dataOut := make([]byte, lenchunkInt)
+		copy(dataOut, data[:lenchunkInt])
+
+		//go func(d []byte) {
 
 		// Write to the TUN interface
-		_, err := tunFile.Write(data[:lenchunkInt])
+		_, err := tunFile.Write(dataOut)
 		if err != nil {
 			log.Fatal(err)
 		}
+		//}(dataOut)
 
 	}
 }
