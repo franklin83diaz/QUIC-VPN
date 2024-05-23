@@ -28,15 +28,19 @@ func redirectTunToQuic(tunFile *os.File, stream quic.Stream) {
 
 		binary.BigEndian.PutUint16(dataIn[0:2], uint16(n))
 
+		dataOut := make([]byte, n+2)
+		copy(dataOut, dataIn[:n+2])
+
 		//TODO:
 		// implement other bit for check is the number a diferent bwteen dataIn[0] and dataIn[1]
 		// add consecutive for now where restaer and add cache for data
-
-		// Send the data to the QUIC stream
-		_, err = stream.Write(dataIn[:n+2])
-		if err != nil {
-			log.Fatal(err)
-		}
+		go func(d []byte) {
+			// Send the data to the QUIC stream
+			_, err = stream.Write(d)
+			if err != nil {
+				log.Fatal(err)
+			}
+		}(dataOut)
 
 	}
 }
@@ -70,4 +74,5 @@ func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
 		//}(dataOut)
 
 	}
+
 }
