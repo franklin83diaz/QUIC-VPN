@@ -17,9 +17,8 @@ func CreateTun(cidr string) *os.File {
 
 	tun := &netlink.Tuntap{
 		LinkAttrs: netlink.LinkAttrs{
-			Name:   "tun0",
-			MTU:    1500,
-			TxQLen: 1000,
+			Name: "tun0",
+			MTU:  1500,
 		},
 		Mode: netlink.TUNTAP_MODE_TUN,
 	}
@@ -27,6 +26,16 @@ func CreateTun(cidr string) *os.File {
 	// Add the interface to the system
 	if err := netlink.LinkAdd(tun); err != nil {
 		log.Fatalf("Failed to add the interface: %v", err)
+	}
+
+	//set txqlen
+	if err := netlink.LinkSetTxQLen(tun, 1000); err != nil {
+		log.Fatalf("Failed to set txqlen: %v", err)
+	}
+
+	// Disable allmulticast
+	if err := netlink.LinkSetAllmulticastOff(tun); err != nil {
+		log.Fatalf("Failed to set allmulticast off: %v", err)
 	}
 
 	// Bring the interface up
