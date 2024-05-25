@@ -8,21 +8,26 @@ import (
 	"github.com/google/gopacket/layers"
 )
 
+// TODO: ADD ICMP
 // UT is UDP, TCP and IP together
 // The head length is fixe to 11 Bytes
+
 type UTProtocol struct {
-	Length   uint16         //2 bytes
-	Protocol uint8          // 1 bytes 1 UDP, 21 SYN, 22 SYN-ACK, 23 ACK, 24 FIN
+	Length uint16 //2 bytes
+	// 1 bytes 1 UDP, 21 TCP CONNECT, 22 TCP CONNECTED, 23 TCP DISCONNECT
+	// The three-way handshake is done with the CONNECT in separate in the server and client
+	// the four-way handshake is done with the DISCONNECT in separate in the server and client
+	Protocol uint8
 	IP       net.IP         // 4 bytes
 	DsPort   layers.TCPPort //2 bytes
 	SrcPort  layers.TCPPort //2 bytes
 }
 
-func UtToTcpIp(ut UTProtocol, destIP net.IP, sequenceNumber uint32, acknowledgmentNumber uint32, window uint16) []byte {
+func UtToTcpIp(srcIP net.IP, destIP net.IP, srcPort layers.TCPPort, dstPort layers.TCPPort, sequenceNumber uint32, acknowledgmentNumber uint32, window uint16, syn bool, ack bool, fin bool) []byte {
 
 	// Create IP layers
 	ipLayer := &layers.IPv4{
-		SrcIP:    ut.IP,                // IP  source net.IP{192, 168, 1, 2}
+		SrcIP:    srcIP,                // IP  source net.IP{192, 168, 1, 2}
 		DstIP:    destIP,               // IP destination net.IP{192, 168, 1, 1}
 		Protocol: layers.IPProtocolTCP, // Set Protocol TCP
 	}
@@ -30,13 +35,14 @@ func UtToTcpIp(ut UTProtocol, destIP net.IP, sequenceNumber uint32, acknowledgme
 	// Create TCP layers
 	// https://en.wikipedia.org/wiki/Transmission_Control_Protocol
 	tcpLayer := &layers.TCP{
-		SrcPort: layers.TCPPort(80),    // source port
-		DstPort: layers.TCPPort(54321), // destination port
-		SYN:     true,                  // Flag SYN  start connection
-		ACK:     true,                  // Flag ACK  Acknowledgment of receipt
-		Ack:     acknowledgmentNumber,  // other part connection sequence number + 1
-		Seq:     sequenceNumber,        // initial sequence number
-		Window:  window,                // size windows
+		SrcPort: srcPort,              // source port layers.TCPPort(54321)
+		DstPort: dstPort,              // destination port layers.TCPPort(54321)
+		SYN:     syn,                  // Flag SYN  start connection
+		ACK:     ack,                  // Flag ACK  Acknowledgment of receipt
+		FIN:     fin,                  // Flag FIN  end connection
+		Ack:     acknowledgmentNumber, // other part connection sequence number + 1
+		Seq:     sequenceNumber,       // initial sequence number
+		Window:  window,               // size windows
 	}
 
 	// Is Important call SetNetworkLayerForChecksum to let gopacket know
