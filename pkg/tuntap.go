@@ -18,13 +18,17 @@ func CreateTun(cidr string) *os.File {
 	tun := &netlink.Tuntap{
 		LinkAttrs: netlink.LinkAttrs{
 			Name: "tun0",
-			MTU:  1500,
 		},
 		Mode: netlink.TUNTAP_MODE_TUN,
 	}
 
 	// Add the interface to the system
 	if err := netlink.LinkAdd(tun); err != nil {
+		log.Fatalf("Failed to add the interface: %v", err)
+	}
+
+	// Set the MTU for the TUN device
+	if err := netlink.LinkSetMTU(tun, 65000); err != nil {
 		log.Fatalf("Failed to add the interface: %v", err)
 	}
 

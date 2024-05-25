@@ -11,7 +11,7 @@ import (
 
 func redirectTunToQuic(tunFile *os.File, stream quic.Stream) {
 
-	dataIn := make([]byte, 1502)
+	dataIn := make([]byte, 65002)
 
 	for {
 		// Read from the TUN interface
@@ -24,16 +24,11 @@ func redirectTunToQuic(tunFile *os.File, stream quic.Stream) {
 			continue
 		}
 
-		//fmt.Println("\033[32m", "n: ", n, "\033[0m")
-
 		binary.BigEndian.PutUint16(dataIn[0:2], uint16(n))
 
 		dataOut := make([]byte, n+2)
 		copy(dataOut, dataIn[:n+2])
 
-		//TODO:
-		// implement other bit for check is the number a diferent bwteen dataIn[0] and dataIn[1]
-		// add consecutive for now where restaer and add cache for data
 		go func(d []byte) {
 			// Send the data to the QUIC stream
 			_, err = stream.Write(d)
@@ -46,32 +41,33 @@ func redirectTunToQuic(tunFile *os.File, stream quic.Stream) {
 }
 
 func redirectQuicToTun(stream quic.Stream, tunFile *os.File) {
-	data := make([]byte, 1500)
+	data := make([]byte, 65000)
 
 	for {
-		lenchunk := make([]byte, 2)
-		stream.Read(lenchunk)
+		lenChunk := make([]byte, 2)
+		stream.Read(lenChunk)
 
-		lenchunkInt := int(binary.BigEndian.Uint16(lenchunk))
+		lenChunkInt := int(binary.BigEndian.Uint16(lenChunk))
 
-		i, _ := stream.Read(data[:lenchunkInt])
+		i, _ := stream.Read(data[:lenChunkInt])
 
-		for i < lenchunkInt {
-			ii, _ := stream.Read(data[i:lenchunkInt])
+		for i < lenChunkInt {
+			ii, _ := stream.Read(data[i:lenChunkInt])
 			i += ii
 		}
 
-		dataOut := make([]byte, lenchunkInt)
-		copy(dataOut, data[:lenchunkInt])
+		dataOut := make([]byte, lenChunkInt)
+		copy(dataOut, data[:lenChunkInt])
 
-		//go func(d []byte) {
+		//	go func(d []byte) {
 
 		// Write to the TUN interface
 		_, err := tunFile.Write(dataOut)
 		if err != nil {
 			log.Fatal(err)
 		}
-		//}(dataOut)
+		//	}(dataOut)
+		//	time.Sleep(50 * time.Microsecond)
 
 	}
 
