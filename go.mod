@@ -15,6 +15,7 @@ require (
 	github.com/andybalholm/brotli v1.1.0
 	github.com/go-task/slim-sprig v0.0.0-20230315185526-52ccab3ef572 // indirect
 	github.com/golang/snappy v0.0.4
+	github.com/google/gopacket v1.1.19
 	github.com/google/pprof v0.0.0-20210407192527-94a9f03dee38 // indirect
 	github.com/onsi/ginkgo/v2 v2.9.5 // indirect
 	github.com/songgao/water v0.0.0-20200317203138-2b4b6d7c09d8
