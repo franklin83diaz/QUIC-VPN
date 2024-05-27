@@ -4,10 +4,17 @@ import (
 	"QUIC-VPN/pkg"
 	"log"
 	"os"
+	"runtime/pprof"
 	"time"
 )
 
 func main() {
+	f, _ := os.Create("profile-client.pprof")
+	defer f.Close()
+
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
+
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
 
 	ip := os.Args[1]

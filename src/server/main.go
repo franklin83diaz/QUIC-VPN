@@ -6,11 +6,18 @@ import (
 	"QUIC-VPN/utils"
 	"fmt"
 	"log"
+	"os"
+	"runtime/pprof"
 	"strings"
 )
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	f, _ := os.Create("profile-server.pprof")
+	defer f.Close()
+
+	pprof.StartCPUProfile(f)
+	defer pprof.StopCPUProfile()
 
 	// Get database connection
 	db := pkg.Db
