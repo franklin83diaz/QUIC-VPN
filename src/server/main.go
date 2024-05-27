@@ -13,6 +13,7 @@ import (
 
 func main() {
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
+	// go tool pprof -http=localhost:8090 profile-server.pprof
 	f, _ := os.Create("profile-server.pprof")
 	defer f.Close()
 

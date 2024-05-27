@@ -9,6 +9,7 @@ import (
 )
 
 func main() {
+	// go tool pprof -http=localhost:8090 profile-client.pprof
 	f, _ := os.Create("profile-client.pprof")
 	defer f.Close()
 
